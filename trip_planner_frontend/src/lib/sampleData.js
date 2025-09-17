@@ -5,6 +5,7 @@ export const sampleRequest = {
     start: '2025-10-10',
     end: '2025-10-20',
   },
+  purpose: 'family vacation',
   budget_total: 4500,
   currency: 'USD',
   party: {

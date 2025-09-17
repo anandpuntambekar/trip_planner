@@ -6,6 +6,7 @@ const defaultState = {
   destinations: 'Paris, Amsterdam, Berlin',
   startDate: '2025-10-10',
   endDate: '2025-10-20',
+  purpose: 'Family vacation',
   budget: '4500',
   adults: '2',
   children: '1',
@@ -36,6 +37,7 @@ function PlanForm({ onSubmit, loading }) {
       destinations,
       startDate: form.startDate,
       endDate: form.endDate,
+      purpose: form.purpose.trim(),
       budget: Number.parseFloat(form.budget || '0'),
       adults: Number.parseInt(form.adults || '0', 10),
       children: Number.parseInt(form.children || '0', 10),
@@ -79,6 +81,15 @@ function PlanForm({ onSubmit, loading }) {
         <label className="plan-form__field">
           <span>Budget (total)</span>
           <input type="number" min="0" value={form.budget} onChange={updateField('budget')} />
+        </label>
+
+        <label className="plan-form__field">
+          <span>Purpose</span>
+          <input
+            value={form.purpose}
+            onChange={updateField('purpose')}
+            placeholder="Family vacation, business retreat, etc."
+          />
         </label>
 
         <label className="plan-form__field">

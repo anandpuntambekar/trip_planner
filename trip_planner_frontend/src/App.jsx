@@ -31,6 +31,7 @@ function buildRequestPayload(formValues) {
       start: formValues.startDate || sampleRequest.dates.start,
       end: formValues.endDate || sampleRequest.dates.end,
     },
+    purpose: formValues.purpose || sampleRequest.purpose,
     budget_total: Number.isFinite(formValues.budget) && formValues.budget > 0 ? formValues.budget : sampleRequest.budget_total,
     party: {
       adults: formValues.adults ?? sampleRequest.party.adults,
