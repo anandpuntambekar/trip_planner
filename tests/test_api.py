@@ -26,9 +26,38 @@ def test_api_plan_endpoint(monkeypatch):
 
     assert response.status_code == 200
     orchestrator.assert_awaited_once()
-    called_payload = orchestrator.await_args.args[0]
+    called_args = orchestrator.await_args.args
+    called_kwargs = orchestrator.await_args.kwargs
+    called_payload = called_args[0]
     assert called_payload["purpose"] == "leisure"
+    assert called_kwargs.get("openai_api_key") is None
+    assert called_kwargs.get("tavily_api_key") is None
     assert response.json() == {"status": "ok"}
+
+
+def test_api_plan_endpoint_handles_runtime_keys(monkeypatch):
+    client = TestClient(app)
+    orchestrator = AsyncMock(return_value={"status": "ok"})
+    monkeypatch.setattr("app.main.orchestrate_llm_trip", orchestrator)
+
+    payload = _sample_payload()
+    payload.update({
+        "openai_api_key": "sk-user",  # trimmed server-side
+        "tavily_api_key": " tv-user ",
+    })
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 200
+    orchestrator.assert_awaited_once()
+    called_args = orchestrator.await_args.args
+    called_kwargs = orchestrator.await_args.kwargs
+
+    called_payload = called_args[0]
+    assert "openai_api_key" not in called_payload
+    assert "tavily_api_key" not in called_payload
+    assert called_kwargs["openai_api_key"] == "sk-user"
+    assert called_kwargs["tavily_api_key"] == "tv-user"
 
 
 def test_trip_llm_only_endpoint(monkeypatch):
@@ -48,9 +77,15 @@ def test_trip_llm_only_endpoint(monkeypatch):
             "constraints": {},
             "interests": [],
             "destinations": ["Paris", "Amsterdam"],
+            "openai_api_key": "sk-inline",
+            "tavily_api_key": "tv-inline",
         },
     )
 
     assert response.status_code == 200
     orchestrator.assert_awaited_once()
+    called_args = orchestrator.await_args.args
+    called_kwargs = orchestrator.await_args.kwargs
+    assert called_kwargs["openai_api_key"] == "sk-inline"
+    assert called_kwargs["tavily_api_key"] == "tv-inline"
     assert response.json() == {"bundle_count": 3}

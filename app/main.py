@@ -33,6 +33,17 @@ async def _plan_from_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     payload = dict(payload)
     payload.setdefault("purpose", payload.get("purpose") or "leisure")
 
+    raw_openai_key = payload.pop("openai_api_key", None) or payload.pop("openAiKey", None)
+    raw_tavily_key = payload.pop("tavily_api_key", None) or payload.pop("tavilyKey", None)
+
+    openai_api_key = raw_openai_key.strip() if isinstance(raw_openai_key, str) else None
+    if openai_api_key == "":
+        openai_api_key = None
+
+    tavily_api_key = raw_tavily_key.strip() if isinstance(raw_tavily_key, str) else None
+    if tavily_api_key == "":
+        tavily_api_key = None
+
     try:
         TripRequest.model_validate(payload)
     except ValidationError as exc:
@@ -40,7 +51,13 @@ async def _plan_from_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     allow_domains: List[str] | None = payload.get("allow_domains")
     deny_domains: List[str] | None = payload.get("deny_domains")
-    return await orchestrate_llm_trip(payload, allow_domains, deny_domains)
+    return await orchestrate_llm_trip(
+        payload,
+        allow_domains,
+        deny_domains,
+        openai_api_key=openai_api_key,
+        tavily_api_key=tavily_api_key,
+    )
 
 @app.post("/api/plan")
 async def api_plan(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
@@ -60,6 +77,8 @@ async def trip_llm_only(
     destinations: list = Body(...),
     allow_domains: list[str] | None = Body(None),
     deny_domains: list[str] | None = Body(None),
+    openai_api_key: str | None = Body(None),
+    tavily_api_key: str | None = Body(None),
 ) -> Dict[str, Any]:
     payload: Dict[str, Any] = {
         "origin": origin,
@@ -76,4 +95,8 @@ async def trip_llm_only(
         payload["allow_domains"] = allow_domains
     if deny_domains is not None:
         payload["deny_domains"] = deny_domains
+    if openai_api_key:
+        payload["openai_api_key"] = openai_api_key
+    if tavily_api_key:
+        payload["tavily_api_key"] = tavily_api_key
     return await _plan_from_payload(payload)

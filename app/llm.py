@@ -2,7 +2,7 @@
 import os
 import json
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
 try:
@@ -89,7 +89,27 @@ def _build_snippets(snips: List[Dict[str, str]]) -> str:
         )
     return "\n\n".join(parts)
 
-def call_llm(payload: Dict[str, Any], snippets: List[Dict[str, str]], model: str = "gpt-4o-mini") -> Dict[str, Any]:
+def _resolve_client(override_key: Optional[str]) -> Optional["OpenAI"]:
+    """Return an OpenAI client, preferring a caller-supplied key when provided."""
+
+    if override_key:
+        if OpenAI is None:  # pragma: no cover - safeguard for test environments
+            logger.warning(
+                "OpenAI override key supplied but openai package is unavailable"
+            )
+            return None
+        logger.debug("Initialising OpenAI client with caller-supplied credentials")
+        return OpenAI(api_key=override_key)
+    return _client
+
+
+def call_llm(
+    payload: Dict[str, Any],
+    snippets: List[Dict[str, str]],
+    model: str = "gpt-4o-mini",
+    *,
+    api_key: Optional[str] = None,
+) -> Dict[str, Any]:
     """Call OpenAI LLM and return parsed JSON dict."""
     user_prompt = USER_TEMPLATE.format(
         origin=payload.get("origin"),
@@ -104,7 +124,9 @@ def call_llm(payload: Dict[str, Any], snippets: List[Dict[str, str]], model: str
         snippets=_build_snippets(snippets),
     )
 
-    if _client is None:
+    client = _resolve_client(api_key)
+
+    if client is None:
         logger.info(
             "Skipping LLM call — returning budget-friendly stub payload (missing client or API key)."
         )
@@ -119,10 +141,13 @@ def call_llm(payload: Dict[str, Any], snippets: List[Dict[str, str]], model: str
             },
         }
 
+    if api_key:
+        logger.debug("Invoking OpenAI model with caller-supplied key override")
+
     logger.info(
         "Invoking LLM model %s with %d snippets", model, len(snippets)
     )
-    resp = _client.chat.completions.create(
+    resp = client.chat.completions.create(
         model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -173,6 +198,7 @@ def llm_backfill_city_details(
     foundation: Dict[str, Any],
     *,
     model: str = "gpt-4o-mini",
+    api_key: Optional[str] = None,
 ) -> Dict[str, Dict[str, List[str]]]:
     """Use the hosted LLM to backfill destination intel when web data is missing."""
 
@@ -180,7 +206,9 @@ def llm_backfill_city_details(
     if not clean_cities:
         return {}
 
-    if _client is None:  # pragma: no cover - exercised via stub in tests
+    client = _resolve_client(api_key)
+
+    if client is None:  # pragma: no cover - exercised via stub in tests
         logger.info(
             "Skipping LLM backfill for cities %s (missing client or API key)",
             ", ".join(clean_cities),
@@ -209,7 +237,10 @@ def llm_backfill_city_details(
         len(clean_cities),
     )
 
-    resp = _client.chat.completions.create(
+    if api_key:
+        logger.debug("Using caller-supplied key for LLM backfill")
+
+    resp = client.chat.completions.create(
         model=model,
         messages=[
             {"role": "system", "content": CITY_BACKFILL_SYSTEM},
