@@ -11,6 +11,8 @@ const defaultState = {
   children: '1',
   seniors: '0',
   objective: 'balanced',
+  openAiKey: '',
+  tavilyKey: '',
 };
 
 function PlanForm({ onSubmit, loading }) {
@@ -41,6 +43,8 @@ function PlanForm({ onSubmit, loading }) {
       children: Number.parseInt(form.children || '0', 10),
       seniors: Number.parseInt(form.seniors || '0', 10),
       objective: form.objective,
+      openAiKey: form.openAiKey.trim(),
+      tavilyKey: form.tavilyKey.trim(),
     });
   };
 
@@ -105,6 +109,37 @@ function PlanForm({ onSubmit, loading }) {
           <span>Seniors</span>
           <input type="number" min="0" value={form.seniors} onChange={updateField('seniors')} />
         </label>
+      </div>
+
+      <div className="plan-form__section">
+        <div className="plan-form__section-header">
+          <h3>Bring your own API access (optional)</h3>
+          <p>Keys are forwarded with this request only and are not stored by the UI.</p>
+        </div>
+
+        <div className="plan-form__grid plan-form__grid--compact">
+          <label className="plan-form__field">
+            <span>OpenAI API key</span>
+            <input
+              type="password"
+              value={form.openAiKey}
+              onChange={updateField('openAiKey')}
+              placeholder="sk-..."
+              autoComplete="off"
+            />
+          </label>
+
+          <label className="plan-form__field">
+            <span>Tavily API key</span>
+            <input
+              type="password"
+              value={form.tavilyKey}
+              onChange={updateField('tavilyKey')}
+              placeholder="tvly-..."
+              autoComplete="off"
+            />
+          </label>
+        </div>
       </div>
 
       <button type="submit" className="plan-form__submit" disabled={loading}>

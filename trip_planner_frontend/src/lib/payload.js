@@ -40,5 +40,21 @@ export function buildRequestPayload(formValues = {}) {
       ...sampleRequest.prefs,
       objective: formValues.objective || sampleRequest.prefs.objective,
     },
+    ...pickApiKeys(formValues),
   };
+}
+
+function pickApiKeys(formValues) {
+  const payload = {};
+  const openAiKey = typeof formValues.openAiKey === 'string' ? formValues.openAiKey.trim() : '';
+  const tavilyKey = typeof formValues.tavilyKey === 'string' ? formValues.tavilyKey.trim() : '';
+
+  if (openAiKey) {
+    payload.openai_api_key = openAiKey;
+  }
+  if (tavilyKey) {
+    payload.tavily_api_key = tavilyKey;
+  }
+
+  return payload;
 }

@@ -26,6 +26,10 @@
   gap: 16px;
 }
 
+.plan-form__grid--compact {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 .plan-form__field {
   display: flex;
   flex-direction: column;
@@ -45,6 +49,29 @@
   padding: 10px 12px;
   font-size: 0.95rem;
   transition: border 0.2s ease;
+}
+
+.plan-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.plan-form__section-header h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.plan-form__section-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #475467;
 }
 
 .plan-form__field input:focus,

@@ -10,9 +10,13 @@ API (via FastAPI) or exercised locally to inspect orchestration logs.
 - [uv](https://github.com/astral-sh/uv) (recommended) or `pip` for dependency
   management.
 - An OpenAI API key stored in `OPENAI_API_KEY` if you want to call the hosted
-  model. Without it, the system falls back to deterministic stub responses.
-- A Tavily API key (`TAVILY_API_KEY`) for live web search. When absent the
-  orchestrator retains heuristic city highlights and logs the fallback path.
+  model. You can also provide a per-request key from the React UI without
+  storing it server-side. Without it, the system falls back to deterministic
+  stub responses.
+- A Tavily API key (`TAVILY_API_KEY`) for live web search. This may also be
+  supplied at request time via the UI so each traveller can bring their own
+  credentials. When absent the orchestrator retains heuristic city highlights
+  and logs the fallback path.
 - Optional: credentials for your preferred web-search adapter. The default
   implementation does not require authentication, but you can plug in your own
   tool by editing `app/tools/websearch.py`.
@@ -69,6 +73,45 @@ budget at a glance.
 If you need to restrict browser origins, configure
 `TRIP_PLANNER_ALLOWED_ORIGINS` (comma-separated list). The default `*` keeps
 local development simple by allowing the Vite dev server to call the API.
+
+## Sharing with friends
+
+To let friends try the orchestrator with their own API credentials, deploy both
+the FastAPI backend and the static frontend and point them at the same base URL.
+
+1. **Deploy the backend** – Package the FastAPI service behind Uvicorn or
+   Gunicorn and expose it publicly. A typical command for platforms such as
+   Render, Railway, or Fly.io is:
+
+   ```bash
+   uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+
+   Configure `TRIP_PLANNER_ALLOWED_ORIGINS` with the URL of your hosted UI to
+   prevent cross-origin rejections.
+
+2. **Build and host the frontend** – Generate the static bundle and publish the
+   contents of `trip_planner_frontend/dist` to your preferred host (Vercel,
+   Netlify, GitHub Pages, or an S3 bucket behind a CDN work well):
+
+   ```bash
+   cd trip_planner_frontend
+   npm install
+   npm run build
+   ```
+
+   Set `VITE_API_BASE_URL` to the public backend URL before building so the SPA
+   posts to the correct host.
+
+3. **Communicate the security model** – The React form now includes optional
+   password inputs for the OpenAI and Tavily API keys. Keys are forwarded to the
+   backend for a single request and never logged or echoed in responses. Advise
+   friends to use HTTPS (e.g., via your platform’s TLS support) before sharing
+   their credentials.
+
+Alternatively, share the repository so friends can run both backend and
+frontend locally with their own `.env` files. The UI defaults to localhost and
+works offline with a bundled sample itinerary when the backend is unavailable.
 
 ## Inspecting orchestration logs
 

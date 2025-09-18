@@ -98,7 +98,7 @@ def test_orchestrator_dedupes_and_fetches_unique_results(monkeypatch):
 
         collected_snippets = {}
 
-        def fake_call_llm(payload, snippets):
+        def fake_call_llm(payload, snippets, **kwargs):
             collected_snippets["value"] = list(snippets)
             return {"llm": "ok"}
 
@@ -107,8 +107,9 @@ def test_orchestrator_dedupes_and_fetches_unique_results(monkeypatch):
         instances = []
 
         class FakeSearcher:
-            def __init__(self, policy):
+            def __init__(self, policy, api_key=None):
                 self.policy = policy
+                self.api_key = api_key
                 self.search_calls: List[str] = []
                 self.fetch_calls: List[str] = []
                 instances.append(self)
@@ -169,7 +170,7 @@ def test_orchestrator_uses_search_summaries_when_fetch_fails(monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "test-key")
         from app import orchestrator
 
-        def fake_call_llm(payload, snippets):
+        def fake_call_llm(payload, snippets, **kwargs):
             # Return predictable payload while capturing snippets for inspection.
             run.captured = list(snippets)
             return {"llm": "ok"}
@@ -177,8 +178,9 @@ def test_orchestrator_uses_search_summaries_when_fetch_fails(monkeypatch):
         monkeypatch.setattr(orchestrator, "call_llm", fake_call_llm)
 
         class FakeSearcher:
-            def __init__(self, policy):
+            def __init__(self, policy, api_key=None):
                 self.policy = policy
+                self.api_key = api_key
                 self.fetch_calls: List[str] = []
 
             async def search(self, query: str):
@@ -231,7 +233,7 @@ def test_orchestrator_respects_payload_domain_lists(monkeypatch):
 
         captured_snippets: Dict[str, List[Dict[str, str]]] = {}
 
-        def fake_call_llm(payload, snippets):
+        def fake_call_llm(payload, snippets, **kwargs):
             captured_snippets["value"] = list(snippets)
             return {"llm": "ok"}
 
@@ -240,8 +242,9 @@ def test_orchestrator_respects_payload_domain_lists(monkeypatch):
         instances: List[object] = []
 
         class FakeSearcher:
-            def __init__(self, policy):
+            def __init__(self, policy, api_key=None):
                 self.policy = policy
+                self.api_key = api_key
                 self.search_calls: List[str] = []
                 self.fetch_calls: List[str] = []
                 instances.append(self)
@@ -305,7 +308,7 @@ def test_orchestrator_foundation_preserves_user_extras(monkeypatch):
 
         captured: Dict[str, Any] = {}
 
-        def fake_call_llm(payload, snippets):
+        def fake_call_llm(payload, snippets, **kwargs):
             captured["agent_context"] = payload.get("agent_context")
             return {"llm": "ok"}
 
@@ -346,7 +349,7 @@ def test_orchestrator_llm_backfill_updates_destination(monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "test-key")
         from app import orchestrator
 
-        def fake_call_llm(payload, snippets):
+        def fake_call_llm(payload, snippets, **kwargs):
             return {"llm": "ok"}
 
         monkeypatch.setattr(orchestrator, "call_llm", fake_call_llm)
@@ -354,7 +357,7 @@ def test_orchestrator_llm_backfill_updates_destination(monkeypatch):
 
         captured_cities: Dict[str, Any] = {}
 
-        def fake_llm_backfill(cities, foundation, model="gpt-4o-mini"):
+        def fake_llm_backfill(cities, foundation, model="gpt-4o-mini", **kwargs):
             captured_cities["value"] = {"cities": list(cities), "model": model}
             return {
                 "Paris": {

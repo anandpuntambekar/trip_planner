@@ -325,6 +325,9 @@ async def orchestrate_llm_trip(
     payload: Dict[str, Any],
     allow_domains: List[str] | None = None,
     deny_domains: List[str] | None = None,
+    *,
+    openai_api_key: str | None = None,
+    tavily_api_key: str | None = None,
 ) -> Dict[str, Any]:
     """Build queries, optionally web-search + fetch snippets, call LLM, return dict."""
     logger.info(
@@ -392,7 +395,9 @@ async def orchestrate_llm_trip(
             max_results=6,
             max_per_domain=2,
         )
-        searcher = WebSearcher(policy)
+        if tavily_api_key:
+            logger.debug("Using caller-supplied Tavily API key for this request")
+        searcher = WebSearcher(policy, api_key=tavily_api_key)
         # SEARCH
         results: List[Dict[str, str]] = []
         for q in queries:
@@ -495,7 +500,12 @@ async def orchestrate_llm_trip(
             or "gpt-4o-mini"
         )
         
-        backfill_data = llm_backfill_city_details(heuristic_cities, foundation, model=backfill_model)
+        backfill_data = llm_backfill_city_details(
+            heuristic_cities,
+            foundation,
+            model=backfill_model,
+            api_key=openai_api_key,
+        )
         if backfill_data:
             dest_notes = destination_context.setdefault("notes", []) or []
             for city, data in backfill_data.items():
@@ -609,7 +619,7 @@ async def orchestrate_llm_trip(
         enriched_payload = dict(payload)
         enriched_payload["agent_context"] = agent_context
         logger.info("Calling LLM with %d snippets", len(snippets))
-        data = call_llm(enriched_payload, snippets)
+        data = call_llm(enriched_payload, snippets, api_key=openai_api_key)
         if isinstance(data, dict):
             logger.info(
                 "LLM response received with keys: %s",

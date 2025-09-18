@@ -23,6 +23,13 @@ VITE_API_BASE_URL=http://localhost:8000
 
 When the value is missing or the request fails, the app falls back to an interactive sample itinerary so the interface stays explorable offline.
 
+### Runtime API keys
+
+The Plan form exposes optional password inputs for OpenAI and Tavily API keys.
+Keys are forwarded with a single request and are never stored by the frontend.
+This allows each traveller to bring their own credentials when you host the UI
+for friends or colleagues.
+
 ## Project structure
 
 ```
